@@ -2,7 +2,7 @@
 This simple tool works as an interface for the Office Deployment Tool, allowing you to quickly install Microsoft Office without editing required XML file or using the command line.
 
 <p align="center">
-  <img src="https://github.com/jmclaren7/auto-office-365/blob/main/extra/screenshot1.jpg?raw=true">
+  <img src="https://github.com/jmclaren7/auto-office-365/blob/main/Extras/screenshot1.jpg?raw=true">
 </p>
 
 ## Features
