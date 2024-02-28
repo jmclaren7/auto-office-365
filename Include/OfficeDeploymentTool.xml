@@ -1,0 +1,10 @@
+<Configuration>
+  <Add OfficeClientEdition="64" Channel="" MigrateArch="FALSE">
+    <Product ID="O365BusinessRetail"><Language ID="en-us" /></Product>
+    <!--Access<Product ID="AccessRetail"><Language ID="en-us" /></Product>Access-->
+  </Add>
+<!--Shared<Property Name="SharedComputerLicensing" Value="1" />Shared-->
+<!--ForceShutdown<Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />ForceShutdown-->
+<Updates Enabled="TRUE" Channel="" /> 
+<Display AcceptEULA="TRUE" /> 
+</Configuration>
