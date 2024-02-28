@@ -10,7 +10,7 @@ This simple tool works as an interface for the Office Deployment Tool, allowing 
 * Select or type the product ID, channel and build to install
 * Select the channel you want and the click "Fetch Versions" to automatically populate a list of build numbers (Thanks to the API at https://office365versions.com)
 
-## Do Do
+## To Do
 * Add an option to specify where the install data is saved (DownloadPath)
 * Add an option to use already downloaded install data
 * Add language selection with support for multiple language selection
