@@ -236,8 +236,6 @@ While 1
 				ContinueLoop
 			EndIf
 
-			ContinueLoop
-
 			ExitLoop
 	EndSwitch
 WEnd
