@@ -86,6 +86,7 @@ GUISetState(@SW_SHOW)
 
 While 1
 	$nMsg = GUIGetMsg()
+	If StringInStr(@ScriptName, "[silent]") Then $nMsg = $Button_Install
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE, $Button_Cancel
 			Exit
