@@ -250,7 +250,7 @@ $pid = ShellExecute($OfficeSetupFullPath, "/download " & $InstallerXML, $TempPat
 $LastDownloadSize = 0
 While ProcessExists($pid)
 	Sleep(10*1000)
-	$DownloadSize = Round(DirGetSize($Path) / 1000 / 1000)
+	$DownloadSize = Round(DirGetSize($TempPath) / 1000 / 1000)
 	If $DownloadSize <> $LastDownloadSize Then
 		_Log("Download progress: " & $DownloadSize & "MB")
 		$LastDownloadSize = $DownloadSize
