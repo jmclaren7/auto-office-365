@@ -1,3 +1,4 @@
+#NoTrayIcon
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=AutoOffice365.ico
 #AutoIt3Wrapper_Compression=4
@@ -10,7 +11,6 @@
 #AutoIt3Wrapper_Run_Au3Stripper=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
-#NoTrayIcon
 ;#RequireAdmin
 
 #include <File.au3>
@@ -36,11 +36,11 @@ Global $TitleVersion = $Title & " v" & StringTrimLeft($Version, StringInStr($Ver
 Global $LogTitle = $Title
 Global $LogWindowStart = 20
 Global $LogWindowSize = 700
-Global $Path = @TempDir & "\AutoOffice365"
+Global $TempPath = @TempDir & "\AutoOffice365"
 Global $OfficeSetup = "OfficeDeploymentTool.exe"
-Global $OfficeSetupFullPath = $Path & "\" & $OfficeSetup
+Global $OfficeSetupFullPath = $TempPath & "\" & $OfficeSetup
 Global $InstallerXML = "OfficeDeploymentTool_"&Random(1000,9999,1)&".xml"
-Global $InstallerXMLFullPath = $Path & "\" & $InstallerXML
+Global $InstallerXMLFullPath = $TempPath & "\" & $InstallerXML
 
 _Log("Starting " & $Title)
 
@@ -138,21 +138,21 @@ While 1
 			_GUICtrlComboBox_ShowDropDown($Combo_Build, True)
 
 		Case $Button_Install
-			If FileExists($Path) Then
-				_Log("Removing existing temp folder at " & $Path)
-				If NOT FileDelete($Path) Then _Log("Remove FAILED")
+			If FileExists($TempPath) Then
+				_Log("Removing existing temp folder at " & $TempPath)
+				If NOT FileDelete($TempPath) Then _Log("Remove FAILED")
 				Sleep(1000)
 			Endif
 
-			_Log("Creating temp folder at " & $Path)
-			DirCreate($Path)
+			_Log("Creating temp folder at " & $TempPath)
+			DirCreate($TempPath)
 
 			_Log("Unpacking files to temp folder")
 			FileInstall(".\Include\OfficeDeploymentTool.exe", $OfficeSetupFullPath, 1)
 			FileInstall(".\Include\OfficeDeploymentTool.xml", $InstallerXMLFullPath, 1)
 
 			If Not FileExists($OfficeSetupFullPath) Or Not FileExists($InstallerXMLFullPath) Then
-				_Log("Extracted files not found" & $Path)
+				_Log("Extracted files not found" & $TempPath)
 				MsgBox(0,$Title,"Error extracting files")
 				Exit
 			EndIf
@@ -246,7 +246,7 @@ GUISetState(@SW_HIDE)
 _Log("Running Office setup download phase")
 _Log("This can take a while and the indicated download progress is not accurate.")
 _Log("The blank console that appears is the Office Deployment Tool which doesn't provide any feedback.")
-$pid = ShellExecute($OfficeSetupFullPath, "/download "&$InstallerXML, $Path)
+$pid = ShellExecute($OfficeSetupFullPath, "/download " & $InstallerXML, $TempPath)
 $LastDownloadSize = 0
 While ProcessExists($pid)
 	Sleep(10*1000)
@@ -259,12 +259,12 @@ Wend
 
 Sleep(2*1000)
 _Log("Running Office setup configure (install) phase")
-ShellExecuteWait($OfficeSetupFullPath, "/configure "&$InstallerXML, $Path)
+ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath)
 
 
 
 Func _Exit()
 	_Log("Completed, removing temp folder")
-	FileDelete($Path)
-	DirRemove($Path, 1)
+	FileDelete($TempPath)
+	DirRemove($TempPath, 1)
 EndFunc
