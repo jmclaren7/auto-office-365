@@ -1,3 +1,4 @@
-AutoOffice365.exe
+*.exe
+!OfficeDeploymentTool.exe
 *Log*
 *_stripped.au3
