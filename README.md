@@ -20,6 +20,3 @@ This simple tool works as an interface for the Office Deployment Tool, allowing 
 * Add activation options
 * Add DeviceBasedLicensing and SCLCache options
 * Improve download progress indicator
-
-## A Note About AutoIT and Antivirus
-AutoIt is an easy to use and capable scripting language that is also easily compiled to an executable. It's also easy for AntiVirus software to falsely identify all AutoIT scripts as malware because all compiled scripts contain the same AutoIT interpreter. I make every effort to reduce false positives but detections are inevitable, please let me know if you experience frequent false positives with any popular antivirus software.
