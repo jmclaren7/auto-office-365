@@ -1,17 +1,21 @@
+#NoTrayIcon
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=AutoOffice365.ico
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Change2CUI=n
+#AutoIt3Wrapper_Res_Comment=https://github.com/jmclaren7/auto-office-365
 #AutoIt3Wrapper_Res_Description=GUI For Office Deployment Tool
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.78
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.90
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
+#AutoIt3Wrapper_Res_ProductName=AutoOffice365
+#AutoIt3Wrapper_Res_ProductVersion=1.0.0.0
+#AutoIt3Wrapper_Res_LegalCopyright=© John McLaren
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #AutoIt3Wrapper_Run_Tidy=y
 #AutoIt3Wrapper_Run_Au3Stripper=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
-#NoTrayIcon
 ;#RequireAdmin
 
 
@@ -29,6 +33,7 @@
 #include <GUIConstantsEx.au3>
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
+
 #include "include\External.au3"
 #include "include\JSON.au3"
 
@@ -43,6 +48,8 @@ Global $OfficeSetup = "OfficeDeploymentTool.exe"
 Global $OfficeSetupFullPath = $TempPath & "\" & $OfficeSetup
 Global $InstallerXML = "OfficeDeploymentTool_" & Random(1000, 9999, 1) & ".xml"
 Global $InstallerXMLFullPath = $TempPath & "\" & $InstallerXML
+Global $DownloadPID
+Global $InstallPID
 
 _Log("Starting " & $Title)
 
@@ -85,6 +92,7 @@ WinSetTitle($Form1, "", $TitleVersion)
 _GUICtrlComboBox_SetDroppedWidth($Combo_Build, 210)
 _GUICtrlComboBox_SetMinVisible($Combo_Build, 15)
 GUISetState(@SW_SHOW, $Form1)
+
 
 While 1
 	$nMsg = GUIGetMsg()
@@ -253,26 +261,52 @@ GUISetState(@SW_HIDE)
 
 _Log("Running Office setup download phase")
 _Log("This can take a while and the indicated download progress is not accurate.")
-_Log("The blank console that appears is the Office Deployment Tool which doesn't provide any feedback.")
-$pid = ShellExecute($OfficeSetupFullPath, "/download " & $InstallerXML, $TempPath)
+_Log(" ")
+$DownloadPID = ShellExecute($OfficeSetupFullPath, "/download " & $InstallerXML, $TempPath, Default, @SW_HIDE)
+
 $LastDownloadSize = 0
-While ProcessExists($pid)
-	Sleep(10 * 1000)
+$Progress = 1
+While ProcessExists($DownloadPID)
 	$DownloadSize = Round(DirGetSize($TempPath) / 1000 / 1000)
 	If $DownloadSize <> $LastDownloadSize Then
-		_Log("Download progress: " & $DownloadSize & "MB")
 		$LastDownloadSize = $DownloadSize
 	EndIf
+
+	Switch $Progress
+		Case 1
+			$ProgressMsg = "|  (" & $DownloadSize & "MB)"
+		Case 2
+			$ProgressMsg = "/  (" & $DownloadSize & "MB)"
+		Case 3
+			$ProgressMsg = "-  (" & $DownloadSize & "MB)"
+		Case Else
+			$ProgressMsg = "\  (" & $DownloadSize & "MB)"
+			$Progress = 0
+	EndSwitch
+	$Progress += 1
+	_Log($ProgressMsg, Default, True)
+
+	$nMsg = GUIGetMsg()
+	Switch $nMsg
+		Case $GUI_EVENT_CLOSE, $Button_Cancel
+			GUISetState(@SW_HIDE, $Form1)
+			Exit
+	EndSwitch
+
+	Sleep(1 * 1000)
 WEnd
 
 Sleep(2 * 1000)
+
 _Log("Running Office setup configure (install) phase")
-ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath)
+$InstallPID = ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath)
 
 
 
 Func _Exit()
 	_Log("Completed, removing temp folder")
+	ProcessClose($DownloadPID)
+	ProcessClose($InstallPID)
 	FileDelete($TempPath)
 	DirRemove($TempPath, 1)
 EndFunc   ;==>_Exit

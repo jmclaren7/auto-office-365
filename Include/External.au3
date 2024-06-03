@@ -11,14 +11,18 @@
 ; Notes:			Some options are configured with global variables
 ; Author(s):        JohnMC - JohnsCS.com
 ; Date/Last Change:	4/26/2024 -- Fixed global handling, added minimize window on start
+;					5/6/2024 -- Added $bOverWriteLast, changed the way line returns work on consolewrite
 ;===============================================================================
 ; Write to the log, prepend a timestamp, create a custom log GUI
-Func _Log($sMessage, $iLevel = 1)
+Func _Log($sMessage, $iLevel = Default, $bOverWriteLast = Default)
 	Static Local $_hLogFile
+
+	; Defaults
+	If $iLevel = Default Then $iLevel = 1
+	if $bOverWriteLast = Default Then $bOverWriteLast = False
 
 	; Global options
 	Global $LogLevel, $LogTitle, $LogWindowStart, $LogWindowSize, $LogFullPath, $LogFileMaxSize, $LogFlushAlways
-
 
 	; If $LogTitle is empty, skip the GUI
 	If $LogLevel = "" Then $LogLevel = 1 ; Only show messages this level or below
@@ -37,7 +41,13 @@ Func _Log($sMessage, $iLevel = 1)
 	If $iLevel > $LogLevel Then Return ""
 
 	; Send to console
-	ConsoleWrite($sLogLine & @CRLF)
+	If $bOverWriteLast And Not @Compiled Then
+		; Do Nothing
+	ElseIf $bOverWriteLast Then
+		ConsoleWrite(@CR & $sLogLine)
+	Else
+		ConsoleWrite(@CRLF & $sLogLine)
+	EndIf
 
 	; Append message to custom GUI if $LogTitle is set
 	If $LogTitle <> "" Then
@@ -53,12 +63,22 @@ Func _Log($sMessage, $iLevel = 1)
 			GUICtrlSetColor(-1, 0xFFFFFF)
 			GUICtrlSetBkColor(-1, 0x000000)
 			GUICtrlSetResizing(-1, $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP + $GUI_DOCKBOTTOM)
+			_GUICtrlEdit_SetReadOnly($_hLogEdit, True)
 			GUISetState(@SW_SHOW, $_hLogWindow)
 			If $Minimize Then GUISetState(@SW_MINIMIZE, $_hLogWindow)
 			_GUICtrlEdit_AppendText($_hLogEdit, $sLogLine)
 		Else
 			; Update an existing GUI
 			_GUICtrlEdit_BeginUpdate($_hLogEdit)
+
+			If $bOverWriteLast Then
+				Local $sFullText = _GUICtrlEdit_GetText($_hLogEdit)
+				;Msgbox(0,"",$sFullText)
+				$sFullText = StringLeft($sFullText, StringInStr($sFullText, @CRLF, 0, -1) - 1)
+				;Msgbox(0,"",$sFullText)
+				_GUICtrlEdit_SetText($_hLogEdit, $sFullText)
+
+			EndIf
 			_GUICtrlEdit_AppendText($_hLogEdit, @CRLF & $sLogLine)
 			_GUICtrlEdit_LineScroll($_hLogEdit, - StringLen($sLogLine), _GUICtrlEdit_GetLineCount($_hLogEdit))
 			_GUICtrlEdit_EndUpdate($_hLogEdit)
@@ -66,7 +86,7 @@ Func _Log($sMessage, $iLevel = 1)
 	EndIf
 
 	; Append message to file
-	If $LogFullPath <> "" Then
+	If $LogFullPath <> "" And Not $bOverWriteLast Then
 		If $_hLogFile = "" Then $_hLogFile = FileOpen($LogFullPath, $FO_APPEND)
 
 		; Limit log size
