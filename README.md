@@ -1,5 +1,5 @@
 # AutoOffice365
-This simple tool works as an interface for the Office Deployment Tool, allowing you to quickly install Microsoft Office without editing required XML file or using the command line.
+This simple tool works as an interface for the Office Deployment Tool, allowing you to quickly install Microsoft Office without editing the required XML file or using the command line.
 
 <p align="center">
   <img src="https://github.com/jmclaren7/auto-office-365/blob/main/Extras/screenshot1.jpg?raw=true">
@@ -10,13 +10,3 @@ This simple tool works as an interface for the Office Deployment Tool, allowing 
 * Select or type the product ID, channel and build to install
 * Select the channel you want and the click "Fetch Versions" to automatically populate a list of build numbers (Thanks to the API at https://office365versions.com)
 * Add "[silent]" to the file name to have the installer run automatically with default values
-
-## To Do
-* Add an option to specify where the install data is saved (DownloadPath)
-* Add an option to use already downloaded install data
-* Add language selection with support for multiple language selection
-* Add option to hide log, ODT console and ODT window
-* Add more product ID options to make individual product install possible with support for multiple product selection and product exclusion
-* Add activation options
-* Add DeviceBasedLicensing and SCLCache options
-* Improve download progress indicator
