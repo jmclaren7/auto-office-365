@@ -8,5 +8,5 @@ This simple tool works as an interface for the Office Deployment Tool, allowing 
 ## Features
 * Common options like 32bit, adding Access to the install and shared licensing mode are simple check boxes
 * Select or type the product ID, channel and build to install
-* Select the channel you want and the click "Fetch Versions" to automatically populate a list of build numbers (Thanks to the API at https://office365versions.com)
+* Select the channel you want and the click "Fetch Versions" to automatically populate a list of build numbers (Thanks to the API at https://www.office365versions.com)
 * Add "[silent]" to the file name to have the installer run automatically with default values
