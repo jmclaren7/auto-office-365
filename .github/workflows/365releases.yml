@@ -22,5 +22,5 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add ReleaseHistory.xml
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Update ReleaseHistory.xml" && git push)
+        git add 365ReleaseHistory.xml
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update 365ReleaseHistory.xml" && git push)
