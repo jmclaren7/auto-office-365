@@ -1,0 +1,26 @@
+name: Update 365 Release History
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  update-release-history:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Download and extract CAB file
+      shell: cmd
+      run: |
+        curl -L -o releasehistory.cab https://officecdn.microsoft.com/pr/wsus/releasehistory.cab
+        expand.exe releasehistory.cab 365ReleaseHistory.xml
+        
+    - name: Check for changes and commit
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add ReleaseHistory.xml
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update ReleaseHistory.xml" && git push)
