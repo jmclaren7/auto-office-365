@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <object type="TAForm" name="Form1">
 	<properties>
-		<property name="Left" vt="Int16">1241</property>
-		<property name="Top" vt="Int16">559</property>
+		<property name="Left" vt="Int16">651</property>
+		<property name="Top" vt="Int16">588</property>
 		<property name="Width" vt="Int16">423</property>
 		<property name="Height" vt="Int16">232</property>
 		<property name="Caption" vt="String">Title</property>
@@ -97,16 +97,6 @@
 				<property name="Height" vt="Int8">25</property>
 				<property name="ItemHeight" vt="Int8">13</property>
 				<property name="TabOrder" vt="Int8">4</property>
-				<property name="Text" vt="String">Current</property>
-				<property name="Items.Strings" vt="List">
-					<list>
-						<li vt="String">MonthlyEnterprise</li>
-						<li vt="String">SemiAnnual</li>
-						<li vt="String">CurrentPreview</li>
-						<li vt="String">SemiAnnualPreview</li>
-						<li vt="String">BetaChannel</li>
-					</list>
-				</property>
 				<property name="CtrlStyle" vt="Int32">1342374594</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
 				<property name="Resizing" vt="Set">DockHeight</property>
@@ -151,7 +141,6 @@
 				<property name="Hint" vt="String">Format: xxxxx.yyyyy</property>
 				<property name="ItemHeight" vt="Int8">13</property>
 				<property name="TabOrder" vt="Int8">7</property>
-				<property name="Text" vt="String">Latest</property>
 				<property name="CtrlStyle" vt="Int32">1344471746</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
 				<property name="Resizing" vt="Set">DockHeight</property>
@@ -182,12 +171,6 @@
 				<property name="Height" vt="Int8">25</property>
 				<property name="ItemHeight" vt="Int8">13</property>
 				<property name="TabOrder" vt="Int8">9</property>
-				<property name="Text" vt="String">O365BusinessRetail</property>
-				<property name="Items.Strings" vt="List">
-					<list>
-						<li vt="String">O365ProPlusRetail</li>
-					</list>
-				</property>
 				<property name="CtrlStyle" vt="Int32">1342374594</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
 				<property name="Resizing" vt="Set">DockHeight</property>
@@ -259,10 +242,10 @@
 			<properties>
 				<property name="Left" vt="Int16">320</property>
 				<property name="Top" vt="Int8">120</property>
-				<property name="Width" vt="Int8">74</property>
+				<property name="Width" vt="Int8">62</property>
 				<property name="Height" vt="Int8">17</property>
 				<property name="Cursor" vt="Ident">crHandPoint</property>
-				<property name="Caption" vt="String">Fetch Versions</property>
+				<property name="Caption" vt="String">Fetch Builds</property>
 				<property name="Font.Charset" vt="Ident">DEFAULT_CHARSET</property>
 				<property name="Font.Color" vt="Ident">clNavy</property>
 				<property name="Font.Height" vt="Int8">-11</property>
@@ -296,6 +279,22 @@
 				<property name="CtrlStyle" vt="Int32">1342308608</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
 				<property name="Resizing" vt="Set"/>
+			</properties>
+			<components/>
+		</object>
+		<object type="TACheckbox" name="Check_VersionUpdate">
+			<properties>
+				<property name="Left" vt="Int8">120</property>
+				<property name="Top" vt="Int16">138</property>
+				<property name="Width" vt="Int16">245</property>
+				<property name="Height" vt="Int8">17</property>
+				<property name="Caption" vt="String">Also Use Channel Selection for Updates</property>
+				<property name="Checked" vt="True">True</property>
+				<property name="State" vt="Ident">cbChecked</property>
+				<property name="TabOrder" vt="Int8">16</property>
+				<property name="CtrlStyle" vt="Int32">1342242819</property>
+				<property name="CtrlExStyle" vt="Int8">0</property>
+				<property name="Resizing" vt="Set">DockHeight</property>
 			</properties>
 			<components/>
 		</object>

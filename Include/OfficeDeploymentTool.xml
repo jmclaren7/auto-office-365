@@ -1,10 +1,14 @@
 <Configuration>
-  <Add OfficeClientEdition="64" Channel="" MigrateArch="FALSE">
-    <Product ID="O365BusinessRetail"><Language ID="en-us" /></Product>
+    <Add OfficeClientEdition="64" Channel="Current" Version="" MigrateArch="FALSE">
+    <Product ID="">
+      <Language ID="en-us" />
+      <!--<ExcludeApp ID="Groove" />-->
+      <!--<ExcludeApp ID="Lync" />-->
+    </Product>
     <!--Access<Product ID="AccessRetail"><Language ID="en-us" /></Product>Access-->
   </Add>
-<!--Shared<Property Name="SharedComputerLicensing" Value="1" />Shared-->
-<!--ForceShutdown<Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />ForceShutdown-->
-<Updates Enabled="TRUE" Channel="" /> 
+<Property Name="SharedComputerLicensing" Value="0" />
+<Property Name="FORCEAPPSHUTDOWN" Value="FALSE" />
+<Updates Enabled="TRUE" Channel="Updates" /> 
 <Display AcceptEULA="TRUE" /> 
 </Configuration>
