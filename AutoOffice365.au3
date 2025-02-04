@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_Change2CUI=n
 #AutoIt3Wrapper_Res_Comment=https://github.com/jmclaren7/auto-office-365
 #AutoIt3Wrapper_Res_Description=GUI For Office Deployment Tool
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.104
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.110
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_ProductName=AutoOffice365
 #AutoIt3Wrapper_Res_ProductVersion=1.0.0.0
@@ -55,8 +55,8 @@ Global $XMLData = ""
 _Console_Attach() ; If it was launched from a console, attach to that console
 Global $LogFileMaxSize = 512
 Global $LogLevel = 1
+Global $LogFullPath = @TempDir & "\" & StringTrimRight(@ScriptName, 4) & ".log"
 If @Compiled Then
-	Global $LogFullPath = @TempDir & "\" & StringTrimRight(@ScriptName, 4) & ".log"
 	_Console_Alloc()
 Else
 	$LogLevel = 3
@@ -381,28 +381,31 @@ If Not @Compiled Then
 EndIf
 
 _Log("Running Office setup download phase")
-_Log("This can take a while and the indicated download progress is not accurate.")
+_Log("This can take a while and the indicated progress may not be accurate.")
 _Log(" ")
 $DownloadPID = ShellExecute($OfficeSetupFullPath, "/download " & $InstallerXML, $TempPath, Default, @SW_HIDE)
 
-$LastDownloadSize = 0
 $Progress = 1
-AdlibRegister("_FileFlush", 3000)
+$ProgressMsgEx = ""
+
+Global $aSize[2]
+AdlibRegister("_GetDownloadProgress", 3000)
+
 While ProcessExists($DownloadPID)
-	$DownloadSize = Round(DirGetSize($TempPath) / 1000 / 1000)
-	If $DownloadSize <> $LastDownloadSize Then
-		$LastDownloadSize = $DownloadSize
+	If $aSize[0] And $aSize[1] And $aSize[1] < $aSize[0] Then
+		$DownloadPercent = Round($aSize[1] / $aSize[0] * 100, 1)
+		$ProgressMsgEx = "  " & $DownloadPercent & "% (" & $aSize[1] & "kB of " & $aSize[0] & "kB)    "
 	EndIf
 
 	Switch $Progress
 		Case 1
-			$ProgressMsg = "|  (" & $DownloadSize & "MB)"
+			$ProgressMsg = "|" & $ProgressMsgEx
 		Case 2
-			$ProgressMsg = "/  (" & $DownloadSize & "MB)"
+			$ProgressMsg = "/" & $ProgressMsgEx
 		Case 3
-			$ProgressMsg = "-  (" & $DownloadSize & "MB)"
+			$ProgressMsg = "-" & $ProgressMsgEx
 		Case Else
-			$ProgressMsg = "\  (" & $DownloadSize & "MB)"
+			$ProgressMsg = "\" & $ProgressMsgEx
 			$Progress = 0
 	EndSwitch
 	$Progress += 1
@@ -422,19 +425,27 @@ Sleep(2 * 1000)
 
 _Log("Running Office setup configure (install) phase")
 $InstallPID = ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath, Default, @SW_HIDE)
+
 $DownloadPID = ""
 $InstallPID = ""
 
 ;=====================================================================================
 ;=====================================================================================
+Func _GetDownloadProgress()
+	Global $aSize
+	Local $aFiles = _FileListToArrayRec($TempPath & "\Office", "*", $FLTAR_FILES, $FLTAR_RECUR, $FLTAR_NOSORT, $FLTAR_FULLPATH)
+	If @error Then Return SetError(1, 0, $aSize)
 
-Func _FileFlush()
-	$aFiles = _FileListToArrayRec($TempPath, "*", $FLTAR_FILES, $FLTAR_RECUR, $FLTAR_NOSORT, $FLTAR_FULLPATH)
-	If @error Then _Log("Error flushing files")
 	For $i = 1 To UBound($aFiles) - 1
-		FileRead($aFiles[$i], 1)
+		FileRead($aFiles[$i], 1) ; flush to disk
+		$aSize[0] += _WinAPI_GetFileSizeOnDisk($aFiles[$i]) ; gets the allocated size
+		$aSize[1] += _WinAPI_GetCompressedFileSize($aFiles[$i]) ; gets size actually being used on the disk
 	Next
-EndFunc   ;==>_FileFlush
+
+	$aSize[0] = Round($aSize[0] / 1000)
+	$aSize[1] = Round($aSize[1] / 1000)
+	Return $aSize
+EndFunc   ;==>_GetDownloadProgress
 
 Func _Exit()
 	_Log("Completed, removing temp folder")
