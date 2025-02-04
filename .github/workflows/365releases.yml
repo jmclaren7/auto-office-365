@@ -2,7 +2,7 @@ name: Update 365 Release History
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Run daily at midnight UTC
+    - cron: '0 1 * * 1,4'
   workflow_dispatch:
 
 jobs:
