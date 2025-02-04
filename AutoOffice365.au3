@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_Change2CUI=n
 #AutoIt3Wrapper_Res_Comment=https://github.com/jmclaren7/auto-office-365
 #AutoIt3Wrapper_Res_Description=GUI For Office Deployment Tool
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.103
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.104
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_ProductName=AutoOffice365
 #AutoIt3Wrapper_Res_ProductVersion=1.0.0.0
@@ -18,23 +18,24 @@
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 ;#RequireAdmin
 
-
-#include <File.au3>
-#include <Misc.au3>
-#include <Process.au3>
+#include <Array.au3>
+#include <ButtonConstants.au3>
+#include <ComboConstants.au3>
 #include <EditConstants.au3>
+#include <File.au3>
+#include <GUIConstantsEx.au3>
 #include <GuiEdit.au3>
 #include <GuiListBox.au3>
+#include <GuiListView.au3>
 #include <GuiComboBox.au3>
 #include <InetConstants.au3>
 #include <ListBoxConstants.au3>
-#include <ButtonConstants.au3>
-#include <ComboConstants.au3>
-#include <GUIConstantsEx.au3>
+#include <ListViewConstants.au3>
+#include <Misc.au3>
+#include <Process.au3>
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 
-#include "include\JSON.au3"
 #include <include\CommonFunctions.au3>
 #include <include\Console.au3>
 
@@ -69,46 +70,56 @@ _Log("Starting " & $Title)
 OnAutoItExitRegister("_Exit")
 
 #Region ### START Koda GUI section ###
-$Form1 = GUICreate("Title", 408, 194, -1, -1)
+$Form1 = GUICreate("Title", 420, 292, -1, -1)
 $Check_Arch32 = GUICtrlCreateCheckbox("Install 32-bit Version", 16, 13, 121, 17)
-$Check_Access = GUICtrlCreateCheckbox("Also Install MS Access", 16, 88, 137, 17)
-$Button_Install = GUICtrlCreateButton("Install", 224, 160, 75, 25)
-$Button_Cancel = GUICtrlCreateButton("Cancel", 312, 160, 75, 25)
-$Combo_Channel = GUICtrlCreateCombo("", 248, 48, 145, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL, $CBS_OEMCONVERT))
-$Label1 = GUICtrlCreateLabel("Channel", 194, 52, 43, 17)
-$Check_Shared = GUICtrlCreateCheckbox("Shared/RDS Licensing Mode", 16, 113, 161, 17)
-$Combo_Build = GUICtrlCreateCombo("", 248, 88, 145, 25, BitOR($GUI_SS_DEFAULT_COMBO, $CBS_OEMCONVERT))
+$Button_Install = GUICtrlCreateButton("Install", 240, 256, 75, 25)
+$Button_Cancel = GUICtrlCreateButton("Cancel", 332, 256, 75, 25)
+$Combo_Channel = GUICtrlCreateCombo("", 236, 40, 173, 25, BitOR($GUI_SS_DEFAULT_COMBO, $CBS_OEMCONVERT))
+$Label1 = GUICtrlCreateLabel("Channel", 182, 44, 43, 17)
+$Check_Shared = GUICtrlCreateCheckbox("Shared/RDS Licensing Mode", 16, 88, 161, 17)
+$Combo_Build = GUICtrlCreateCombo("", 236, 72, 173, 25, BitOR($GUI_SS_DEFAULT_COMBO, $CBS_OEMCONVERT))
 GUICtrlSetTip(-1, "Format: xxxxx.yyyyy")
-$Label2 = GUICtrlCreateLabel("Build", 209, 92, 27, 17)
+$Label2 = GUICtrlCreateLabel("Build", 197, 76, 27, 17)
 GUICtrlSetTip(-1, "Format: xxxxx.yyyyy")
-$Combo_ProductID = GUICtrlCreateCombo("", 248, 8, 145, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL, $CBS_OEMCONVERT))
-$Check_EnableUpdates = GUICtrlCreateCheckbox("Enable Updates", 16, 138, 105, 17)
+$Combo_ProductID = GUICtrlCreateCombo("", 236, 8, 173, 25, BitOR($GUI_SS_DEFAULT_COMBO, $CBS_OEMCONVERT))
+$Check_EnableUpdates = GUICtrlCreateCheckbox("Enable Updates", 16, 113, 105, 17)
 GUICtrlSetState(-1, $GUI_CHECKED)
 $Check_ForceClose = GUICtrlCreateCheckbox("Force Close Office", 16, 63, 105, 17)
 GUICtrlSetState(-1, $GUI_CHECKED)
-$Label3 = GUICtrlCreateLabel("Product ID", 184, 12, 55, 17)
+$Label3 = GUICtrlCreateLabel("Product ID", 172, 12, 55, 17)
 $Check_ReplaceArch = GUICtrlCreateCheckbox("Force Change 32-bit/64-bit", 16, 38, 161, 17)
-$Label_FetchVersions = GUICtrlCreateLabel("Fetch Builds", 320, 120, 62, 17)
+$Label_VisitGitHub = GUICtrlCreateLabel("Visit GitHub Page", 12, 266, 87, 17)
 GUICtrlSetFont(-1, 8, 400, 4, "MS Sans Serif")
 GUICtrlSetColor(-1, 0x000080)
 GUICtrlSetCursor(-1, 0)
-$Label_VisitGitHub = GUICtrlCreateLabel("Visit GitHub Page", 16, 170, 87, 17)
-GUICtrlSetFont(-1, 8, 400, 4, "MS Sans Serif")
-GUICtrlSetColor(-1, 0x000080)
-GUICtrlSetCursor(-1, 0)
-$Check_VersionUpdate = GUICtrlCreateCheckbox("Also Use Channel Selection for Updates", 120, 138, 245, 17)
+$Check_VersionUpdate = GUICtrlCreateCheckbox("Apply Channel to Updates", 124, 113, 153, 17)
 GUICtrlSetState(-1, $GUI_CHECKED)
-GUISetState(@SW_SHOW)
+$List_Exclude = GUICtrlCreateListView("", 128, 140, 278, 108, BitOR($GUI_SS_DEFAULT_LISTVIEW, $LVS_NOCOLUMNHEADER), BitOR($WS_EX_CLIENTEDGE, $LVS_EX_CHECKBOXES, $LVS_EX_TRACKSELECT))
+$Label4 = GUICtrlCreateLabel("Exclude Apps", 32, 180, 69, 17)
+$Check_ListBuilds = GUICtrlCreateCheckbox("Fetch List of Builds", 300, 100, 113, 17)
 #EndRegion ### END Koda GUI section ###
 
 WinSetTitle($Form1, "", $TitleVersion)
 
 GUICtrlSetData($Combo_ProductID, "O365BusinessRetail|O365ProPlusRetail|O365BusinessEEANoTeamsRetail|O365ProPlusEEANoTeamsRetail", "O365BusinessRetail")
 _GUICtrlComboBox_SetDroppedWidth($Combo_ProductID, 200)
+_GUICtrlComboBox_SetEditSel($Combo_ProductID, 0, 0)
+
 GUICtrlSetData($Combo_Channel, "CurrentPreview|Current|SemiAnnualPreview|SemiAnnual|PerpetualVL2019|PerpetualVL2021|PerpetualVL2024|MonthlyEnterprise", "Current")
+
 GUICtrlSetData($Combo_Build, "Latest", "Latest")
 _GUICtrlComboBox_SetDroppedWidth($Combo_Build, 250)
 _GUICtrlComboBox_SetMinVisible($Combo_Build, 15)
+_GUICtrlComboBox_SetEditSel($Combo_Build, 0, 0)
+
+; Exclude apps list view setup
+$aApps = StringSplit("Access|Bing*|Excel|Groove (Legacy OneDrive)*|Lync (Skype for Business)*|OneDrive|OneNote|Outlook|OutlookForWindows (New Outlook)*|PowerPoint|Publisher|Teams|Word", "|", 2)
+_GUICtrlListView_AddColumn($List_Exclude, " ")
+For $i = 0 To UBound($aApps) - 1 ; Rows
+	$ListIndex = _GUICtrlListView_AddItem($List_Exclude, StringReplace($aApps[$i], "*", ""))
+	If StringInStr($aApps[$i], "*") Then _GUICtrlListView_SetItemChecked($List_Exclude, $ListIndex, True)
+Next
+_GUICtrlListView_SetColumnWidth($List_Exclude, 0, $LVSCW_AUTOSIZE)
 
 GUISetState(@SW_SHOW, $Form1)
 
@@ -117,11 +128,12 @@ $SelectedChannelLast = $SelectedChannel
 
 While 1
 	$nMsg = GUIGetMsg()
+
 	If StringInStr(@ScriptName, "[silent]") Then $nMsg = $Button_Install
 	If $XMLData <> "" And _GUICtrlComboBox_GetDroppedState($Combo_Channel) = False Then
 		$SelectedChannelLast = $SelectedChannel
 		$SelectedChannel = GUICtrlRead($Combo_Channel)
-		If $SelectedChannelLast <> $SelectedChannel Then $nMsg = $Label_FetchVersions
+		If $SelectedChannelLast <> $SelectedChannel Then $nMsg = $Check_ListBuilds ;$Label_FetchVersions
 	EndIf
 
 	Switch $nMsg
@@ -129,13 +141,19 @@ While 1
 			GUISetState(@SW_HIDE, $Form1)
 			Exit
 
+		Case $Combo_Build, $Combo_Channel, $Combo_ProductID
+			_GUICtrlComboBox_SetEditSel($Combo_ProductID, 0, 0)
+			_GUICtrlComboBox_SetEditSel($Combo_Channel, 0, 0)
+			_GUICtrlComboBox_SetEditSel($Combo_Build, 0, 0)
+
 		Case $Label_VisitGitHub
 			_Log("Opening GitHub page in default browser")
 			ShellExecute("https://github.com/jmclaren7/auto-office-365")
 
-
-		Case $Label_FetchVersions
+		Case $Check_ListBuilds
 			_Log("Fetching list of versions")
+			If GUICtrlRead($Check_ListBuilds) = $GUI_UNCHECKED Then ContinueLoop
+
 			GUISetCursor($MCID_WAIT, 1)
 
 			$XMLFile = $TempPath & "\365ReleaseHistoryLocalCache.xml"
@@ -159,7 +177,7 @@ While 1
 
 			$oXML = ObjCreate("Microsoft.XMLDOM")
 			If @error Then
-				_Error($Title, "XML error.", "Failed to create XMLDOM object")
+				_Error($Title, "XML setup error.", Default, "Failed to create XMLDOM object")
 				Exit
 			EndIf
 
@@ -169,7 +187,7 @@ While 1
 			$oXML.loadXML($XMLData)
 			If $oXML.parseError.errorCode <> 0 Then
 				;_Log("==========" & $XMLData & "==========")
-				_Error($Title, "Error reading version information.", "XML Parse Error: " & $oXML.parseError.reason)
+				_Error($Title, "Error loading version information.", Default, "XML Parse Error: " & $oXML.parseError.reason)
 				Exit
 			EndIf
 
@@ -197,87 +215,54 @@ While 1
 				$Date = $oUpdate.getAttribute("PubTime")
 				$Date = StringLeft($Date, StringInStr($Date, "T") - 1) ; Source: 2024-11-12T08:32:14.997Z
 
-				$sVersionList &= "|" & $oUpdate.getAttribute("Build") & "   (" & $oUpdate.getAttribute("Version") & "  -  " & $Date & ")"
+				$sVersionList &= "|" & $oUpdate.getAttribute("Build") & "  (" & $oUpdate.getAttribute("Version") & "  " & $Date & ")"
 			Next
 
 			_Log($sVersionList)
 
 			GUICtrlSetData($Combo_Build, "")
 			GUICtrlSetData($Combo_Build, $sVersionList, "Latest")
-			_GUICtrlComboBox_SetEditSel($Combo_Build, 0, 0)
 			_GUICtrlComboBox_ShowDropDown($Combo_Build, True)
 
 			GUISetCursor()
 
 		Case $Button_Install
-			;If FileExists($TempPath) Then
-			;	_Log("Removing existing temp folder at " & $TempPath)
-			;	If Not FileDelete($TempPath) Then _Log("Remove FAILED")
-			;	Sleep(1000)
-			;EndIf
-
-			If FileDelete($OfficeSetupFullPath) = 0 Then _Log("Could not remove ODT")
-			If FileDelete($InstallerXMLFullPath) = 0 Then _Log("Could not remove XML")
+			If FileExists($OfficeSetupFullPath) And FileDelete($OfficeSetupFullPath) = 0 Then _Log("Could not remove ODT")
 
 			_Log("Creating temp folder at " & $TempPath)
 			DirCreate($TempPath)
 
-			_Log("Unpacking files to temp folder")
+			_Log("Unpacking ODT")
 			FileInstall(".\Include\OfficeDeploymentTool.exe", $OfficeSetupFullPath, 1)
-			FileInstall(".\Include\OfficeDeploymentTool.xml", $InstallerXMLFullPath, 1)
 
-			If Not FileExists($OfficeSetupFullPath) Or Not FileExists($InstallerXMLFullPath) Then
+			If Not FileExists($OfficeSetupFullPath) Then
 				_Error($Title, "Error extracting files", Default, $TempPath)
 				Exit
 			EndIf
 
-			; === Begin GUI option checks ===================
+			; Create XML Document
+			$oXML = ObjCreate("Microsoft.XMLDOM")
+			If @error Then Exit MsgBox(16, "Error", "Failed to create XMLDOM")
+
+			; Create root element
+			$rootNode = $oXML.createElement("Configuration")
+			$oXML.appendChild($rootNode)
+
+			; Create Add node
+			$addNode = $oXML.createElement("Add")
+
+			; Arch attribute
 			If GUICtrlRead($Check_Arch32) = $GUI_CHECKED Then
 				_Log("32 bit selected")
-				_ReplaceStringInFile($InstallerXMLFullPath, "OfficeClientEdition=""64""", "OfficeClientEdition=""32""")
+				$addNode.setAttribute("OfficeClientEdition", "32")
 			EndIf
 
-			If GUICtrlRead($Check_ReplaceArch) = $GUI_CHECKED Then
-				_Log("Migrate arch selected")
-				_ReplaceStringInFile($InstallerXMLFullPath, 'MigrateArch="FALSE"', 'MigrateArch="TRUE"')
-			EndIf
-
-			If GUICtrlRead($Check_Access) = $GUI_CHECKED Then
-				_Log("Access selected")
-				_ReplaceStringInFile($InstallerXMLFullPath, "<!--Access", "")
-				_ReplaceStringInFile($InstallerXMLFullPath, "Access-->", "")
-			EndIf
-
-			If GUICtrlRead($Check_Shared) = $GUI_CHECKED Then
-				_Log("Shared licnese selected")
-				_ReplaceStringInFile($InstallerXMLFullPath, '"SharedComputerLicensing" Value="0"', '"SharedComputerLicensing" Value="1"')
-			EndIf
-
-			If GUICtrlRead($Check_EnableUpdates) <> $GUI_CHECKED Then
-				_Log("Updates disabled")
-				_ReplaceStringInFile($InstallerXMLFullPath, 'Updates Enabled="TRUE"', 'Updates Enabled="FALSE"')
-			EndIf
-
-			If GUICtrlRead($Check_ForceClose) = $GUI_CHECKED Then
-				_Log("Force close selected")
-				_ReplaceStringInFile($InstallerXMLFullPath, '"FORCEAPPSHUTDOWN" Value="FALSE"', '"FORCEAPPSHUTDOWN" Value="TRUE"')
-			EndIf
-
-			$ProductID = GUICtrlRead($Combo_ProductID)
-			_Log("ProductID: " & $ProductID)
-			_ReplaceStringInFile($InstallerXMLFullPath, 'Product ID=""', 'Product ID="' & $ProductID & '"')
-
+			; Channel attribute
 			$Channel = GUICtrlRead($Combo_Channel)
 			_Log("Channel: " & $Channel)
-			_ReplaceStringInFile($InstallerXMLFullPath, 'Channel="Current"', 'Channel="' & $Channel & '"')
+			$addNode.setAttribute("Channel", $Channel)
 
-			If GUICtrlRead($Check_VersionUpdate) = $GUI_CHECKED Then
-				_ReplaceStringInFile($InstallerXMLFullPath, 'Channel="Updates"', 'Channel="' & $Channel & '"')
-			Else
-				_ReplaceStringInFile($InstallerXMLFullPath, 'Channel="Updates"', '')
-			EndIf
-
-			; Build/Version
+			; Version attribute
 			$Version = GUICtrlRead($Combo_Build)
 			_Log("Specified Version: " & $Version)
 
@@ -287,21 +272,100 @@ While 1
 
 			If StringRegExp($Version, "^\d{4,}\.\d{4,}\.\d{4,}\.\d{4,}$") Then ; Format is w.x.y.z
 				_Log("Detected w.x.y.z")
-				_ReplaceStringInFile($InstallerXMLFullPath, 'Version=""', 'Version="' & $Version & '"')
+				$addNode.setAttribute("Version", $Version)
 
 			ElseIf StringRegExp($Version, "^\d{4,}\.\d{4,}$") Then ; Format is y.z
 				_Log("Detected y.z")
-				_ReplaceStringInFile($InstallerXMLFullPath, 'Version=""', 'Version="16.0.' & $Version & '"')
+				$addNode.setAttribute("Version", '16.0.' & $Version)
 
 			ElseIf $Version = "Latest" Or $Version = "" Then ; Latest or blank is specified
 				_Log("Latest version selection")
-				_ReplaceStringInFile($InstallerXMLFullPath, 'Version=""', '')
 
 			Else ; Something else we didn't expect was specified
 				_Log("Error in version selection")
 				MsgBox(0, $Title, "Error in version selection.")
 				ContinueLoop
 			EndIf
+
+			; MigrateArch attribute
+			If GUICtrlRead($Check_ReplaceArch) = $GUI_CHECKED Then
+				_Log("Migrate arch selected")
+				_ReplaceStringInFile($InstallerXMLFullPath, 'MigrateArch="FALSE"', 'MigrateArch="TRUE"')
+				$addNode.setAttribute("MigrateArch", "TRUE")
+			EndIf
+
+			$rootNode.appendChild($addNode)
+
+			; Add Product node
+			$ProductID = GUICtrlRead($Combo_ProductID)
+			_Log("ProductID: " & $ProductID)
+			$productNode = $oXML.createElement("Product")
+			$productNode.setAttribute("ID", $ProductID)
+			$addNode.appendChild($productNode)
+
+			; Exclude apps
+			For $i = 0 To _GUICtrlListView_GetItemCount($List_Exclude) - 1
+				If _GUICtrlListView_GetItemChecked($List_Exclude, $i) Then
+					$ItemText = _GUICtrlListView_GetItemText($List_Exclude, $i)
+					If StringInStr($ItemText, " (") Then $ItemText = StringLeft($ItemText, StringInStr($ItemText, " (") - 1)
+					_Log("Excluding: " & $ItemText)
+					$ExcludeNode = $oXML.createElement("ExcludeApp")
+					$ExcludeNode.setAttribute("ID", $ItemText)
+					$productNode.appendChild($ExcludeNode)
+				EndIf
+			Next
+
+			; Create Language node
+			$langNode = $oXML.createElement("Language")
+			$langNode.setAttribute("ID", "en-us")
+			$productNode.appendChild($langNode)
+
+
+			; SharedComputerLicensing
+			If GUICtrlRead($Check_Shared) = $GUI_CHECKED Then
+				_Log("Shared licnese selected")
+				$propNode = $oXML.createElement("Property")
+				$propNode.setAttribute("Name", "SharedComputerLicensing")
+				$propNode.setAttribute("Value", "1")
+				$rootNode.appendChild($propNode)
+			EndIf
+
+			If GUICtrlRead($Check_ForceClose) = $GUI_CHECKED Then
+				_Log("Force close selected")
+				$propNode = $oXML.createElement("Property")
+				$propNode.setAttribute("Name", "FORCEAPPSHUTDOWN")
+				$propNode.setAttribute("Value", "TRUE")
+				$rootNode.appendChild($propNode)
+			EndIf
+
+			; Create Updates node
+			$updatesNode = $oXML.createElement("Updates")
+
+			; EnableUpdates attribute
+			If GUICtrlRead($Check_EnableUpdates) = $GUI_UNCHECKED Then
+				_Log("Updates disabled")
+				$updatesNode.setAttribute("Enabled", "FALSE")
+			Else
+				$updatesNode.setAttribute("Enabled", "TRUE")
+			EndIf
+
+			; Updates Channel attribute
+			If GUICtrlRead($Check_VersionUpdate) = $GUI_CHECKED Then
+				_Log("Updates channel enabled: " & $Channel)
+				$updatesNode.setAttribute("Channel", $Channel)
+			EndIf
+
+			; Add the updates node
+			$rootNode.appendChild($updatesNode)
+
+			; Add Display node
+			$displayNode = $oXML.createElement("Display")
+			$displayNode.setAttribute("AcceptEULA", "TRUE")
+			$rootNode.appendChild($displayNode)
+
+			; Save the XML file
+			FileDelete($InstallerXMLFullPath)
+			FileWrite($InstallerXMLFullPath, $oXML.xml)
 
 			ExitLoop
 	EndSwitch
@@ -311,7 +375,10 @@ WEnd
 
 GUISetState(@SW_HIDE)
 
-If Not @Compiled And MsgBox(0 + 4, $Title, "Paused, Continue?") <> $IDYES Then Exit
+If Not @Compiled Then
+	ShellExecute($TempPath)
+	If MsgBox(0 + 4, $Title, "Paused, Continue?") <> $IDYES Then Exit
+EndIf
 
 _Log("Running Office setup download phase")
 _Log("This can take a while and the indicated download progress is not accurate.")
@@ -354,7 +421,9 @@ WEnd
 Sleep(2 * 1000)
 
 _Log("Running Office setup configure (install) phase")
-$InstallPID = ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath)
+$InstallPID = ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath, Default, @SW_HIDE)
+$DownloadPID = ""
+$InstallPID = ""
 
 ;=====================================================================================
 ;=====================================================================================
