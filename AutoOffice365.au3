@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_Change2CUI=n
 #AutoIt3Wrapper_Res_Comment=https://github.com/jmclaren7/auto-office-365
 #AutoIt3Wrapper_Res_Description=GUI For Office Deployment Tool
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.110
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.115
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_ProductName=AutoOffice365
 #AutoIt3Wrapper_Res_ProductVersion=1.0.0.0
@@ -97,6 +97,7 @@ GUICtrlSetState(-1, $GUI_CHECKED)
 $List_Exclude = GUICtrlCreateListView("", 128, 140, 278, 108, BitOR($GUI_SS_DEFAULT_LISTVIEW, $LVS_NOCOLUMNHEADER), BitOR($WS_EX_CLIENTEDGE, $LVS_EX_CHECKBOXES, $LVS_EX_TRACKSELECT))
 $Label4 = GUICtrlCreateLabel("Exclude Apps", 32, 180, 69, 17)
 $Check_ListBuilds = GUICtrlCreateCheckbox("Fetch List of Builds", 300, 100, 113, 17)
+$Edit_XML = GUICtrlCreateCheckbox("Edit XML", 152, 260, 65, 17)
 #EndRegion ### END Koda GUI section ###
 
 WinSetTitle($Form1, "", $TitleVersion)
@@ -166,7 +167,9 @@ While 1
 				$XMLData = BinaryToString($XMLData, $SB_UTF8)
 				If @error Then
 					_Error($Title, "Error downloading version information.")
-					Exit
+					GUICtrlSetState($Check_ListBuilds, $GUI_UNCHECKED)
+					GUISetCursor()
+					ContinueLoop
 				EndIf
 				FileDelete($XMLFile)
 				DirCreate($TempPath)
@@ -241,7 +244,8 @@ While 1
 			EndIf
 
 			; Create XML Document
-			$oXML = ObjCreate("Microsoft.XMLDOM")
+			;$oXML = ObjCreate("Microsoft.XMLDOM")
+			$oXML = ObjCreate("MSXML2.DOMDocument.6.0")
 			If @error Then Exit MsgBox(16, "Error", "Failed to create XMLDOM")
 
 			; Create root element
@@ -320,7 +324,6 @@ While 1
 			$langNode.setAttribute("ID", "en-us")
 			$productNode.appendChild($langNode)
 
-
 			; SharedComputerLicensing
 			If GUICtrlRead($Check_Shared) = $GUI_CHECKED Then
 				_Log("Shared licnese selected")
@@ -365,7 +368,10 @@ While 1
 
 			; Save the XML file
 			FileDelete($InstallerXMLFullPath)
-			FileWrite($InstallerXMLFullPath, $oXML.xml)
+			$NewXML = $oXML.xml
+			;$NewXML = StringRegExpReplace($NewXML, "<.+?>", "$0" & @CRLF)
+			$NewXML = FormatXML($NewXML)
+			FileWrite($InstallerXMLFullPath, $NewXML)
 
 			ExitLoop
 	EndSwitch
@@ -374,6 +380,12 @@ While 1
 WEnd
 
 GUISetState(@SW_HIDE)
+
+If GUICtrlRead($Edit_XML) = $GUI_CHECKED Then
+	ShellExecute($InstallerXMLFullPath, "", Default, "Edit")
+	$Message = "XML config file opened in default editor, select Ok when finished editing and edited file is saved. Select Cancel to exit. If the file did not opened you can access it at the path below." & @CRLF & @CRLF & $InstallerXMLFullPath
+	If MsgBox(1, $Title, $Message) <> $IDOK Then Exit
+EndIf
 
 If Not @Compiled Then
 	ShellExecute($TempPath)
@@ -394,7 +406,7 @@ AdlibRegister("_GetDownloadProgress", 3000)
 While ProcessExists($DownloadPID)
 	If $aSize[0] And $aSize[1] And $aSize[1] < $aSize[0] Then
 		$DownloadPercent = Round($aSize[1] / $aSize[0] * 100, 1)
-		$ProgressMsgEx = "  " & $DownloadPercent & "% (" & $aSize[1] & "kB of " & $aSize[0] & "kB)    "
+		$ProgressMsgEx = "  " & $DownloadPercent & "% (" & $aSize[1] & "kB of " & $aSize[0] & "kB) "
 	EndIf
 
 	Switch $Progress
@@ -454,3 +466,32 @@ Func _Exit()
 	FileDelete($TempPath)
 	DirRemove($TempPath, 1)
 EndFunc   ;==>_Exit
+
+Func FormatXML($sXML)
+	; Add new lines after each node
+	$sXML = StringRegExpReplace($sXML, "(<[^/].*?>)", @CRLF & "$1" & @CRLF)
+	$sXML = StringRegExpReplace($sXML, "(</.*?>)", @CRLF & "$1" & @CRLF)
+
+	; Remove extra new lines
+	$sXML = StringRegExpReplace($sXML, "[\r\n]+", @CRLF)
+
+	; Indent the XML
+	Local $aLines = StringSplit($sXML, @CRLF, 3)
+	Local $iIndentLevel = 0
+	Local $sIndentedXML = ""
+
+	For $i = 0 To UBound($aLines) - 1
+		Local $sLine = StringStripWS($aLines[$i], 3)
+		If StringInStr($sLine, "</") Then
+			$iIndentLevel -= 1
+		EndIf
+
+		$sIndentedXML &= StringFormat("%s%s", StringFormat("%" & ($iIndentLevel * 2) & "s", ""), $sLine) & @CRLF
+
+		If StringInStr($sLine, "<") And Not StringInStr($sLine, "</") And Not StringInStr($sLine, "/>") Then
+			$iIndentLevel += 1
+		EndIf
+	Next
+
+	Return $sIndentedXML
+EndFunc   ;==>FormatXML

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <object type="TAForm" name="Form1">
 	<properties>
-		<property name="Left" vt="Int16">361</property>
-		<property name="Top" vt="Int16">532</property>
+		<property name="Left" vt="Int16">1057</property>
+		<property name="Top" vt="Int16">598</property>
 		<property name="Width" vt="Int16">435</property>
 		<property name="Height" vt="Int16">330</property>
 		<property name="Caption" vt="String">Title</property>
@@ -305,6 +305,20 @@
 				<property name="Height" vt="Int8">17</property>
 				<property name="Caption" vt="String">Fetch List of Builds</property>
 				<property name="TabOrder" vt="Int8">17</property>
+				<property name="CtrlStyle" vt="Int32">1342242819</property>
+				<property name="CtrlExStyle" vt="Int8">0</property>
+				<property name="Resizing" vt="Set">DockHeight</property>
+			</properties>
+			<components/>
+		</object>
+		<object type="TACheckbox" name="Edit_XML">
+			<properties>
+				<property name="Left" vt="Int16">152</property>
+				<property name="Top" vt="Int16">260</property>
+				<property name="Width" vt="Int8">65</property>
+				<property name="Height" vt="Int8">17</property>
+				<property name="Caption" vt="String">Edit XML</property>
+				<property name="TabOrder" vt="Int8">18</property>
 				<property name="CtrlStyle" vt="Int32">1342242819</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
 				<property name="Resizing" vt="Set">DockHeight</property>
