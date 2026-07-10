@@ -1148,10 +1148,13 @@ EndFunc   ;==>_KeyValue
 ;===============================================================================
 ; Function Name:   	_Log()
 ; Description:		Console log, file log, custom GUI log
-; Call With:		_Log($sMessage[, $iLevel[, $bOverWriteLast[, $iCallingLine]]])
+; Call With:		_Log($sMessage[, $iLevel[, $iLineMode[, $iCallingLine]]])
 ; Parameter(s): 	$sMessage - Text to print
 ;					$iLevel - [optional] The level *this* message, 1 for critical/always shown (default), 2+ for debugging
-;					$bOverWriteLast - [optional] Overwrite the last line in the log (default False)
+;					$iLineMode - [optional] How the console line is written (default 0)
+;						0 = normal, start a new line (@CRLF)
+;						1 = overwrite the last line in place (@CR), padded to clear leftover chars; not written to file
+;						2 = append inline to the current line (no line break)
 ;					$iCallingLine - [optional] Script line number (default @ScriptLineNumber)
 ; Return Value(s):  The original message, if $iLevel is greater than $LogLevel returns an empty string
 ; Notes:			Some options are configured with global variables
@@ -1159,13 +1162,14 @@ EndFunc   ;==>_KeyValue
 ; Date/Last Change:	4/26/2024 -- Fixed global handling, added minimize window on start
 ;					5/6/2024 -- Added $bOverWriteLast, changed the way line returns work on consolewrite
 ;					7/21/2024 -- Added script line number
+;					7/8/2026 -- Replaced $bOverWriteLast with $iLineMode (0=newline, 1=overwrite, 2=inline)
 ;===============================================================================
-Func _Log($sMessage, $iLevel = Default, $bOverWriteLast = Default, $iCallingLine = @ScriptLineNumber)
-	Static Local $_hLogFile
+Func _Log($sMessage, $iLevel = Default, $iLineMode = Default, $iCallingLine = @ScriptLineNumber)
+	Static Local $_hLogFile, $_iLastLineLength
 
 	; Defaults
 	If $iLevel = Default Then $iLevel = 1
-	If $bOverWriteLast = Default Then $bOverWriteLast = False
+	If $iLineMode = Default Then $iLineMode = 0
 
 	; Global options
 	Global $LogLevel, $LogTitle, $LogWindowStart, $LogWindowSize, $LogFullPath, $LogFileMaxSize, $LogFlushAlways
@@ -1192,19 +1196,29 @@ Func _Log($sMessage, $iLevel = Default, $bOverWriteLast = Default, $iCallingLine
 	; Do not log this message if $iLevel is greater than global $LogLevel
 	If $iLevel > $LogLevel Then Return ""
 
+	; Normalize all line-break variants to a single @LF (GUI/console/file paths expect one form)
+	$sLogLine = StringReplace($sLogLine, @CRLF, @LF)
+	$sLogLine = StringReplace($sLogLine, @CR, @LF)
+
+	Local $iThisLineLength = StringLen(StringStripWS($sLogLine, 2))
+
 	; Send to console
 	; _Console_Write is from Console.au3
 	#ignorefunc _Console_Write
 
-	If $bOverWriteLast And Not @Compiled Then
-		; Do Nothing
-	ElseIf $bOverWriteLast Then
-		ConsoleWrite(@CR & $sLogLine)
-		Call("_Console_Write", @CR & $sLogLine)
+	If $iLineMode = 1 Then
+		Local $ClearBufferSpaces = _StringRepeat(" ", $_iLastLineLength - $iThisLineLength)
+		ConsoleWrite(@CR & $sLogLine & $ClearBufferSpaces)
+		Call("_Console_Write", @CR & $sLogLine & $ClearBufferSpaces)
+	elseIf $iLineMode = 2 Then
+		ConsoleWrite($sLogLine)
+		Call("_Console_Write", $sLogLine)
 	Else
 		ConsoleWrite(@CRLF & $sLogLine)
 		Call("_Console_Write", @CRLF & $sLogLine)
 	EndIf
+
+	$_iLastLineLength = $iThisLineLength
 
 	; Append message to custom GUI if $LogTitle is set
 	If $LogTitle <> "" Then
@@ -1229,7 +1243,7 @@ Func _Log($sMessage, $iLevel = Default, $bOverWriteLast = Default, $iCallingLine
 
 		; Update GUI
 		_GUICtrlEdit_BeginUpdate($_hLogEdit)
-		If $bOverWriteLast Then
+		If $iLineMode = 1 Then
 			Local $sFullText = _GUICtrlEdit_GetText($_hLogEdit)
 			$sFullText = StringLeft($sFullText, StringInStr($sFullText, @CRLF, 0, -1) - 1)
 			_GUICtrlEdit_SetText($_hLogEdit, $sFullText)
@@ -1247,7 +1261,7 @@ Func _Log($sMessage, $iLevel = Default, $bOverWriteLast = Default, $iCallingLine
 	EndIf
 
 	; Log to file if enabled
-	If $LogFullPath <> "" And Not $bOverWriteLast Then
+	If $LogFullPath <> "" And $iLineMode <> 1 Then ; Skip file writes for overwrite (mode 1) progress updates to avoid flooding/rotating the log
 		; Limit log size, if over size, rename and open new one
 		If $LogFileMaxSize > 0 Then
 			Local $iCurrentSize = FileGetPos($_hLogFile)
