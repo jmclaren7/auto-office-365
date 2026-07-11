@@ -6,11 +6,11 @@
 #AutoIt3Wrapper_Change2CUI=n
 #AutoIt3Wrapper_Res_Comment=https://github.com/jmclaren7/auto-office-365
 #AutoIt3Wrapper_Res_Description=GUI For Office Deployment Tool
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.115
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.121
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_ProductName=AutoOffice365
 #AutoIt3Wrapper_Res_ProductVersion=1.0.0.0
-#AutoIt3Wrapper_Res_LegalCopyright=© John McLaren
+#AutoIt3Wrapper_Res_LegalCopyright=John McLaren
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #AutoIt3Wrapper_Run_Tidy=y
@@ -36,20 +36,20 @@
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 
-#include <include\CommonFunctions.au3>
-#include <include\Console.au3>
+#include "include\CommonFunctions.au3"
+#include "include\Console.au3"
 
-Global $Title = "AutoOffice365"
-Global $Version = FileGetVersion(@ScriptFullPath)
-Global $TitleVersion = $Title & " v" & StringTrimLeft($Version, StringInStr($Version, ".", 0, -1))
-Global $TempPath = @TempDir & "\AutoOffice365"
-Global $OfficeSetup = "OfficeDeploymentTool.exe"
-Global $OfficeSetupFullPath = $TempPath & "\" & $OfficeSetup
+Global Const $Title = "AutoOffice365"
+Global Const $AppVersion = FileGetVersion(@ScriptFullPath)
+Global Const $TitleVersion = $Title & " v" & StringTrimLeft($AppVersion, StringInStr($AppVersion, ".", 0, -1))
+Global Const $TempPath = @TempDir & "\AutoOffice365"
+Global Const $OfficeSetup = "OfficeDeploymentTool.exe"
+Global Const $OfficeSetupFullPath = $TempPath & "\" & $OfficeSetup
 Global $InstallerXML = "OfficeDeploymentTool_" & Random(1000, 9999, 1) & ".xml"
 Global $InstallerXMLFullPath = $TempPath & "\" & $InstallerXML
 Global $DownloadPID
-Global $InstallPID
 Global $XMLData = ""
+Global Const $Silent = StringInStr(@ScriptName, "[silent]") > 0
 
 ; Setup Logging
 _Console_Attach() ; If it was launched from a console, attach to that console
@@ -130,7 +130,7 @@ $SelectedChannelLast = $SelectedChannel
 While 1
 	$nMsg = GUIGetMsg()
 
-	If StringInStr(@ScriptName, "[silent]") Then $nMsg = $Button_Install
+	If $Silent Then $nMsg = $Button_Install
 	If $XMLData <> "" And _GUICtrlComboBox_GetDroppedState($Combo_Channel) = False Then
 		$SelectedChannelLast = $SelectedChannel
 		$SelectedChannel = GUICtrlRead($Combo_Channel)
@@ -164,13 +164,13 @@ While 1
 			If @error Then
 				_Log("Downloading file to " & $XMLFile)
 				$XMLData = InetRead($URL, $INET_FORCERELOAD)
-				$XMLData = BinaryToString($XMLData, $SB_UTF8)
-				If @error Then
+				If @error Or BinaryLen($XMLData) = 0 Then
 					_Error($Title, "Error downloading version information.")
 					GUICtrlSetState($Check_ListBuilds, $GUI_UNCHECKED)
 					GUISetCursor()
 					ContinueLoop
 				EndIf
+				$XMLData = BinaryToString($XMLData, $SB_UTF8)
 				FileDelete($XMLFile)
 				DirCreate($TempPath)
 				FileWrite($XMLFile, $XMLData)
@@ -274,7 +274,7 @@ While 1
 			$Version = StringStripWS($Version, 8)
 			_Log("Updated Version: " & $Version)
 
-			If StringRegExp($Version, "^\d{4,}\.\d{4,}\.\d{4,}\.\d{4,}$") Then ; Format is w.x.y.z
+			If StringRegExp($Version, "^\d+\.\d+\.\d{4,}\.\d{4,}$") Then ; Format is w.x.y.z
 				_Log("Detected w.x.y.z")
 				$addNode.setAttribute("Version", $Version)
 
@@ -287,6 +287,7 @@ While 1
 
 			Else ; Something else we didn't expect was specified
 				_Log("Error in version selection")
+				If $Silent Then Exit ; Don't loop on a modal error when running unattended
 				MsgBox(0, $Title, "Error in version selection.")
 				ContinueLoop
 			EndIf
@@ -294,7 +295,6 @@ While 1
 			; MigrateArch attribute
 			If GUICtrlRead($Check_ReplaceArch) = $GUI_CHECKED Then
 				_Log("Migrate arch selected")
-				_ReplaceStringInFile($InstallerXMLFullPath, 'MigrateArch="FALSE"', 'MigrateArch="TRUE"')
 				$addNode.setAttribute("MigrateArch", "TRUE")
 			EndIf
 
@@ -379,7 +379,13 @@ While 1
 	Sleep(10)
 WEnd
 
-GUISetState(@SW_HIDE)
+; Keep the form visible so Cancel still works during the download phase, but lock the other controls
+Global $aLockControls[13] = [$Check_Arch32, $Check_ReplaceArch, $Check_ForceClose, $Check_Shared, $Check_EnableUpdates, _
+		$Check_VersionUpdate, $Combo_ProductID, $Combo_Channel, $Combo_Build, $Check_ListBuilds, $List_Exclude, _
+		$Edit_XML, $Button_Install]
+For $i = 0 To UBound($aLockControls) - 1
+	GUICtrlSetState($aLockControls[$i], $GUI_DISABLE)
+Next
 
 If GUICtrlRead($Edit_XML) = $GUI_CHECKED Then
 	ShellExecute($InstallerXMLFullPath, "", Default, "Edit")
@@ -435,11 +441,20 @@ WEnd
 
 Sleep(2 * 1000)
 
+; The configure phase blocks, so the form can't respond to input and is hidden
+GUISetState(@SW_HIDE, $Form1)
+
 _Log("Running Office setup configure (install) phase")
-$InstallPID = ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath, Default, @SW_HIDE)
+$InstallExitCode = ShellExecuteWait($OfficeSetupFullPath, "/configure " & $InstallerXML, $TempPath, Default, @SW_HIDE)
 
 $DownloadPID = ""
-$InstallPID = ""
+
+If @error Or $InstallExitCode <> 0 Then
+	_Log("Office setup failed, exit code: " & $InstallExitCode)
+	If Not $Silent Then MsgBox(16, $Title, "Office setup reported an error (exit code " & $InstallExitCode & "). Check the log at " & $LogFullPath)
+Else
+	_Log("Office setup completed successfully")
+EndIf
 
 ;=====================================================================================
 ;=====================================================================================
@@ -448,21 +463,21 @@ Func _GetDownloadProgress()
 	Local $aFiles = _FileListToArrayRec($TempPath & "\Office", "*", $FLTAR_FILES, $FLTAR_RECUR, $FLTAR_NOSORT, $FLTAR_FULLPATH)
 	If @error Then Return SetError(1, 0, $aSize)
 
+	Local $iAllocated = 0, $iOnDisk = 0
 	For $i = 1 To UBound($aFiles) - 1
 		FileRead($aFiles[$i], 1) ; flush to disk
-		$aSize[0] += _WinAPI_GetFileSizeOnDisk($aFiles[$i]) ; gets the allocated size
-		$aSize[1] += _WinAPI_GetCompressedFileSize($aFiles[$i]) ; gets size actually being used on the disk
+		$iAllocated += _WinAPI_GetFileSizeOnDisk($aFiles[$i]) ; gets the allocated size
+		$iOnDisk += _WinAPI_GetCompressedFileSize($aFiles[$i]) ; gets size actually being used on the disk
 	Next
 
-	$aSize[0] = Round($aSize[0] / 1000)
-	$aSize[1] = Round($aSize[1] / 1000)
+	$aSize[0] = Round($iAllocated / 1000)
+	$aSize[1] = Round($iOnDisk / 1000)
 	Return $aSize
 EndFunc   ;==>_GetDownloadProgress
 
 Func _Exit()
 	_Log("Completed, removing temp folder")
 	ProcessClose($DownloadPID)
-	ProcessClose($InstallPID)
 	FileDelete($TempPath)
 	DirRemove($TempPath, 1)
 EndFunc   ;==>_Exit
